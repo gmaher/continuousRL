@@ -42,7 +42,6 @@ class EnvTest(object):
 
     def reset(self):
         self.num_iters = 0
-        self.in_goal = False
         self.t = 0.0
         self.observation_space.state = [0.0,0.0]
         return self.observation_space.state
