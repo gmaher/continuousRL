@@ -64,7 +64,7 @@ class EnvTest(object):
             if self.observation_space.in_goal():
                 reward = 1.0
 
-        return self.observation_space.state, reward, self.done, {'ale.lives':0}
+        return self.observation_space.state, reward, self.done
 
 
     def render(self):

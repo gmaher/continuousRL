@@ -36,8 +36,8 @@ class Linear:
 
         self.loss_list = self.build_loss_list()
 
-        self.q_train_list = self.build_train_list(self.loss_list,self.lr,'q')
-        self.mu_train_list = self.build_train_list(self.policy_loss_list,self.lr_mu,'mu')
+        self.q_train_list,self.q_norm = self.build_train_list(self.loss_list,self.lr,'q')
+        self.mu_train_list,self.mu_norm = self.build_train_list(self.policy_loss_list,self.lr_mu,'mu')
 
     def build_action_list(self,state,scope,reuse=False):
         with tf.variable_scope(scope):
@@ -100,7 +100,6 @@ class Linear:
         trainable_var_key = tf.GraphKeys.TRAINABLE_VARIABLES
 
         var_list = tf.get_collection(key=trainable_var_key, scope=scope)
-        print var_list
         train_ops = []
         grad_norm_ops = []
         for i in range(len(loss_list)):
@@ -117,7 +116,7 @@ class Linear:
         return train_ops, grad_norm_ops
 
     def train_step(self):
-        return self.q_train_list[0], self.mu_train_list[0]
+        return self.q_train_list[0], self.q_norm[0], self.mu_train_list[0], self.mu_norm[0]
 
     def update_targets(self):
         return self.update_target_op
