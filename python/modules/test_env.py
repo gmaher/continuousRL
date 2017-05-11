@@ -13,6 +13,7 @@ class ObservationSpace(object):
         #x-pos, x-velocity
         self.state = [0.0,0.0]
         self.goal = [goal-r, goal+r]
+        self.goal_spot = goal
         self.bound = bound
 
     def in_goal(self):
@@ -22,7 +23,7 @@ class ObservationSpace(object):
             return False
 
     def OOB(self):
-        if self.state[0] >= self.bound:
+        if np.abs(self.state[0]) >= self.bound:
             return True
         else:
             return False
@@ -52,18 +53,15 @@ class EnvTest(object):
 
         self.num_iters += 1
         self.t += self.dt
-        self.observation_space.state[1] += self.dt*action
+        self.observation_space.state[1] += self.dt*action[0]
         self.observation_space.state[0] += self.observation_space.state[1]*self.dt
 
         reward = -self.dt
-        if self.observation_space.OOB():
-            reward = -1.0
-            self.done = True
-        elif self.t >= self.T:
-            self.done = True
-            if self.observation_space.in_goal():
-                reward = 1.0
 
+        if self.t >= self.T:
+            self.done = True
+
+            reward = -np.abs(self.observation_space.state[0]-self.observation_space.goal_spot)+1.0
         return self.observation_space.state, reward, self.done
 
 

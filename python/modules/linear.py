@@ -1,15 +1,15 @@
 import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.layers as layers
-
+#TODO: Value shape is always 1?
 class Linear:
     def __init__(self, input_shape, action_shape, value_shape, config):
         self.s = tf.placeholder(shape=[None]+input_shape, dtype=tf.float32)
         self.sp = tf.placeholder(shape=[None]+input_shape, dtype=tf.float32)
         self.a = tf.placeholder(shape=[None]+action_shape, dtype=tf.float32)
         self.r = tf.placeholder(shape=None, dtype=tf.float32)
-        self.done = tf.placeholder(shape=[None]+value_shape, dtype=tf.bool)
-        self.tau = tf.placeholder(shape=1, dtype=tf.float32)
+        self.done = tf.placeholder(shape=None, dtype=tf.bool)
+        self.tau = tf.placeholder(shape=None, dtype=tf.float32)
         self.config = config
         self.lr = tf.placeholder(shape=None,dtype=tf.float32)
         self.lr_mu = tf.placeholder(shape=None,dtype=tf.float32)
@@ -28,7 +28,7 @@ class Linear:
             l = self.build_qvalue_list(self.s,self.action_list[i], scope='q',
                 reuse=True)
 
-            self.policy_loss_list.append(l[i])
+            self.policy_loss_list.append(-l[i])
 
         self.target_action_list = self.build_action_list(self.sp,'target_policy')
         self.target_qvalue_list = self.build_qvalue_list(self.sp,
@@ -38,6 +38,9 @@ class Linear:
 
         self.q_train_list,self.q_norm = self.build_train_list(self.loss_list,self.lr,'q')
         self.mu_train_list,self.mu_norm = self.build_train_list(self.policy_loss_list,self.lr_mu,'mu')
+
+        self.q_update = self.build_update_list("q","target_value")
+        self.mu_update = self.build_update_list("mu","target_policy")
 
     def build_action_list(self,state,scope,reuse=False):
         with tf.variable_scope(scope):
@@ -91,9 +94,9 @@ class Linear:
         oplist = []
         for i in range(len(main_list)):
             update = self.tau*main_list[i] + (1.0-self.tau)*target_list[i]
-            oplist.append(tf.assign(q_target_list[i],update))
+            oplist.append(tf.assign(target_list[i],update))
 
-        self.update_target_op = tf.group(*oplist)
+        return tf.group(*oplist)
 
     def build_train_list(self, loss_list, lr, scope):
         opt = tf.train.AdamOptimizer(lr)
@@ -106,17 +109,19 @@ class Linear:
             loss = loss_list[i]
             grads = opt.compute_gradients(loss,var_list)
 
+            print loss
+            print grads
             if self.config.grad_clip:
                 grads = [(tf.clip_by_norm(g,self.config.clip_val),var) for g,var in grads]
-
+            print grads
             train_ops.append(opt.apply_gradients(grads))
             g = [G[0] for G in grads]
             grad_norm_ops.append(tf.global_norm(g))
-
+        print train_ops
         return train_ops, grad_norm_ops
 
     def train_step(self):
         return self.q_train_list[0], self.q_norm[0], self.mu_train_list[0], self.mu_norm[0]
 
     def update_targets(self):
-        return self.update_target_op
+        return [self.q_update, self.mu_update]

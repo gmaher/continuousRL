@@ -9,13 +9,11 @@ class ReplayBuffer:
             self.buffer_[key] = []
 
         self.buffer_[key].append(tup)
-        print tup
+
     def sample(self,key,N=32):
 
         if len(self.buffer_[key]) < N:
             N = len(self.buffer_[key])
-
-        print self.buffer_
 
         inds = np.random.choice(len(self.buffer_[key]),N)
         tups = [self.buffer_[key][i] for i in inds]
@@ -23,6 +21,6 @@ class ReplayBuffer:
         a = np.array([tups[i][1] for i in range(N)])
         r = np.array([tups[i][2] for i in range(N)])
         st = np.array([tups[i][3] for i in range(N)])
-        done = np.array([tups[i][4] for i in range(N)])
+        done = [tups[i][4] for i in range(N)]
 
         return s,a,r,st,done
