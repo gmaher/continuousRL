@@ -1,15 +1,15 @@
 import numpy as np
-def train_loop(sess, AC, env, replay_buffer, config):
+def train_loop(sess, model, env, replay_buffer, config):
 
     for e in range(num_episodes):
         s = env.reset()
-        AC.policy.sample_policy()
-        key = AC.get_policy_identifier()
+        model.sample_policy()
+        key = model.get_policy_identifier()
 
         done = False
 
         while not done:
-            a = sess.run(AC.action, {AC.policy.s:s})
+            a = sess.run(model.action(), {AC.model.s:s})
 
             st,r,done = env.step(a)
 
@@ -19,9 +19,9 @@ def train_loop(sess, AC, env, replay_buffer, config):
 
             tup = replay_buffer.sample(key=key)
 
-            sess.run(AC.train_step(), {AC.model.s:tup[0],
-                AC.model.sp:tup[3],
-                AC.r:tup[2],
-                AC.done:tup[3]}
+            sess.run(model.train_step(), {model.s:tup[0],
+                model.sp:tup[3],
+                model.r:tup[2],
+                model.done:tup[3]}
 
-            sess.run(AC.update_targets(), {AC.tau:config.tau})
+            sess.run(model.update_targets(), {model.tau:config.tau})
