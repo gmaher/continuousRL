@@ -9,7 +9,7 @@ def train_loop(sess, AC, env, replay_buffer, config):
         done = False
 
         while not done:
-            a = sess.run(AC.policy.get_action(), {AC.policy.s:s})
+            a = sess.run(AC.action, {AC.policy.s:s})
 
             st,r,done = env.step(a)
 
@@ -19,9 +19,8 @@ def train_loop(sess, AC, env, replay_buffer, config):
 
             tup = replay_buffer.sample(key=key)
 
-            sess.run(AC.train_step(), {AC.policy.s:tup[0],
-                AC.critic.s:tup[0],
-                AC.sp:tup[3],
+            sess.run(AC.train_step(), {AC.model.s:tup[0],
+                AC.model.sp:tup[3],
                 AC.r:tup[2],
                 AC.done:tup[3]}
 
