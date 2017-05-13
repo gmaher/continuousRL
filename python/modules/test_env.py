@@ -11,7 +11,7 @@ class ActionSpace(object):
 class ObservationSpace(object):
     def __init__(self, r,goal,bound):
         #x-pos, x-velocity
-        self.state = [0.0,0.0]
+        self.state = [0.1,0.0]
         self.goal = [goal-r, goal+r]
         self.goal_spot = goal
         self.bound = bound
@@ -33,7 +33,7 @@ class EnvTest(object):
         #3 states
         self.dt = dt
         self.t = 0.0
-        self.T = 1.0
+        self.T = 2.0
         self.time_penalty = -dt
         self.num_iters = 0
         self.done = False
@@ -44,7 +44,8 @@ class EnvTest(object):
     def reset(self):
         self.num_iters = 0
         self.t = 0.0
-        self.observation_space.state = [0.0,0.0]
+        self.observation_space.state = [0.1,0.0]
+        self.done = False
         return self.observation_space.state
 
     def step(self, action):
@@ -58,6 +59,9 @@ class EnvTest(object):
 
         reward = -self.dt
 
+        if self.observation_space.state[0] >= self.observation_space.goal_spot:
+            reward = 1.0
+            self.done = True
         if self.t >= self.T:
             self.done = True
 

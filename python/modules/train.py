@@ -1,19 +1,21 @@
 import numpy as np
-def train_loop(sess, model, env, replay_buffer, config):
+def train_loop(sess, model, env, replay_buffer, config, decay=0.995):
     count = 0
     rewards = []
-    for e in range(config.num_episodes):
+
+    for ep in range(config.num_episodes):
         s = env.reset()
         model.sample_policy()
         key = model.get_policy_identifier()
 
         done = False
-        noise = 0
-        for i in range(300):
+
+
+        while not done:
             count += 1
-            noise = noise + np.random.randn()*np.sqrt(env.dt)
+
             s_tf = np.array(s).reshape((1,len(env.observation_space.state)))
-            a = sess.run(model.action(), {model.s:s_tf})[0]+noise
+            a = sess.run(model.action(), {model.s:s_tf})[0]
 
             st,r,done = env.step(a)
             # st = np.array(st).reshape((1,len(env.observation_space.state)))
@@ -47,8 +49,8 @@ def train_loop(sess, model, env, replay_buffer, config):
 
                 sess.run(model.update_targets(), {model.tau:config.tau})
 
-        print 'episode {}: final reward {}, Q {}, Qnorm {}, Munorm: {}'\
-            .format(e,r,q,qnorm,munorm)
+        print 'episode {}: final reward {}, final state {}, action{},  Q {}, Qnorm {}, Munorm: {}'\
+            .format(ep,r, s, a, q,qnorm,munorm)
         rewards.append(r)
 
     return rewards

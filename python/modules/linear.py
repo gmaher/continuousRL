@@ -36,11 +36,11 @@ class Linear:
 
         self.loss_list = self.build_loss_list()
 
-        self.q_train_list,self.q_norm = self.build_train_list(self.loss_list,self.lr,'q')
-        self.mu_train_list,self.mu_norm = self.build_train_list(self.policy_loss_list,self.lr_mu,'mu')
+        self.q_train_list,self.q_norm = self.build_train_list(self.loss_list,self.lr,'q/')
+        self.mu_train_list,self.mu_norm = self.build_train_list(self.policy_loss_list,self.lr_mu,'mu/')
 
-        self.q_update = self.build_update_list("q","target_value")
-        self.mu_update = self.build_update_list("mu","target_policy")
+        self.q_update = self.build_update_list("q/","target_value/")
+        self.mu_update = self.build_update_list("mu/","target_policy/")
 
     def build_action_list(self,state,scope,reuse=False):
         with tf.variable_scope(scope):
@@ -91,6 +91,7 @@ class Linear:
         trainable_var_key = tf.GraphKeys.TRAINABLE_VARIABLES
         main_list = tf.get_collection(key=trainable_var_key, scope=scope)
         target_list = tf.get_collection(key=trainable_var_key, scope=target_scope)
+        print "scope {},{} var_list {},{}".format(scope,target_scope,main_list,target_list)
         oplist = []
         for i in range(len(main_list)):
             update = self.tau*main_list[i] + (1.0-self.tau)*target_list[i]
@@ -103,21 +104,20 @@ class Linear:
         trainable_var_key = tf.GraphKeys.TRAINABLE_VARIABLES
 
         var_list = tf.get_collection(key=trainable_var_key, scope=scope)
+        print "scope {}, var_list {}".format(scope,var_list)
         train_ops = []
         grad_norm_ops = []
         for i in range(len(loss_list)):
             loss = loss_list[i]
             grads = opt.compute_gradients(loss,var_list)
 
-            print loss
-            print grads
             if self.config.grad_clip:
                 grads = [(tf.clip_by_norm(g,self.config.clip_val),var) for g,var in grads]
-            print grads
+
             train_ops.append(opt.apply_gradients(grads))
             g = [G[0] for G in grads]
             grad_norm_ops.append(tf.global_norm(g))
-        print train_ops
+
         return train_ops, grad_norm_ops
 
     def train_step(self):
