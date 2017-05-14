@@ -2,14 +2,16 @@ from modules import test_env, linear, replay_buffer, train, bootstrappedAC
 from config import test_config
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import gym
 
-t = test_env.EnvTest(r=0.1,goal=5.0,bound=20.0, a_max=50)
+#t = test_env.EnvTest(r=0.1,goal=5.0,bound=20.0, a_max=50)
 
+t = gym.make('Pendulum-v0')
 conf = test_config.Config()
 replay = replay_buffer.ReplayBuffer()
 
-# model = linear.Linear([2],[1],[1],conf)
-model = bootstrappedAC.BootstrappedAC([2],[1],[1],conf, num_heads=10)
+model = linear.Linear([3],[1],[1],conf)
+#model = bootstrappedAC.BootstrappedAC([3],[1],[1],conf, num_heads=1)
 sess = tf.Session()
 sess.run(tf.initialize_all_variables())
 
