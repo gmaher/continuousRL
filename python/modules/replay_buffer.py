@@ -10,7 +10,7 @@ class ReplayBuffer:
 
         self.buffer_[key].append(tup)
 
-    def sample(self,key,N=32):
+    def sample(self,key,N=64):
 
         if len(self.buffer_[key]) < N:
             N = len(self.buffer_[key])

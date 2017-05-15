@@ -2,7 +2,8 @@ import numpy as np
 def train_loop(sess, model, env, replay_buffer, config, decay=0.995):
     count = 0
     rewards = []
-
+    noise = 1.0
+    rewards_mean = []
     for ep in range(config.num_episodes):
         s = env.reset()
         model.sample_policy()
@@ -10,13 +11,15 @@ def train_loop(sess, model, env, replay_buffer, config, decay=0.995):
 
         done = False
 
-        noise = 1.0
+
         noise = noise*decay
+        R = 0
+        it = 0
         while not done:
             count += 1
-
+            it+= 1
             s_tf = s.reshape((1,len(s)))
-            a = sess.run(model.action(), {model.s:s_tf})[0] + noise*np.random.randn(1)
+            a = sess.run(model.act(), {model.s:s_tf,model.phase:0})[0] + noise*np.random.randn(1)
 
             st,r,done,_ = env.step(a)
             # st = np.array(st).reshape((1,len(env.observation_space.state)))
@@ -26,6 +29,7 @@ def train_loop(sess, model, env, replay_buffer, config, decay=0.995):
             s=st
 
             if count%config.learn_frequency == 0:
+
                 tup = replay_buffer.sample(key=key)
 
                 _,qnorm,_,munorm = sess.run(model.train_step(), {model.s:tup[0],
@@ -35,26 +39,46 @@ def train_loop(sess, model, env, replay_buffer, config, decay=0.995):
                     model.done:tup[4],
                     model.lr:config.lr,
                     model.lr_mu:config.lr_mu,
-                    model.tau: config.tau})
+                    model.tau: config.tau,
+                    model.phase:1})
 
-                q = sess.run(model.q(), {model.s:tup[0],
+                q = sess.run(model.qvalue(), {model.s:tup[0],
                     model.sp:tup[3],
                     model.r:tup[2],
                     model.a:tup[1],
                     model.done:tup[4],
                     model.lr:config.lr,
                     model.lr_mu:config.lr_mu,
-                    model.tau: config.tau})
+                    model.tau: config.tau,
+                    model.phase:1})
+
+                q_loss = sess.run(model.q_loss, {model.s:tup[0],
+                    model.sp:tup[3],
+                    model.r:tup[2],
+                    model.a:tup[1],
+                    model.done:tup[4],
+                    model.lr:config.lr,
+                    model.lr_mu:config.lr_mu,
+                    model.tau: config.tau,
+                    model.phase:1})
 
                 q = np.mean(q)
-
+                q_loss = np.mean(q_loss)
                 sess.run(model.update_targets(), {model.tau:config.tau})
 
             if ep%config.render_frequency == 0:
                 env.render()
 
-        print 'episode {}: final reward {}, final state {}, action{},  Q {}, Qnorm {}, Munorm: {}'\
-            .format(ep,r, s, a, q,qnorm,munorm)
-        rewards.append(r)
+            R += config.gamma**it*r
+        rewards.append(R)
+        if count < 100:
+            rewards_mean.append(0)
+        else:
+            rewards_mean.append(np.mean(rewards[-100:]))
 
-    return rewards
+        rewards_mean.append(R)
+        print 'episode {}: r {}, R {}, final state {}, action{},  Q {}, Q_loss {}, Qnorm {}, Munorm: {}'\
+            .format(ep,r, R, s, a, q,q_loss,qnorm,munorm)
+
+
+    return rewards_mean

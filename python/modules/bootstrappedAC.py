@@ -14,11 +14,14 @@ class BootstrappedAC(Linear):
         self.mu_head_update_list = self.build_head_update_list('mu','target_policy')
         self.q_head_update_list = self.build_head_update_list('q','target_value')
 
-
         print self.mu_head_update_list
     def build_action_list(self,state,scope,reuse=False):
         print 'building action scope {}'.format(scope)
         with tf.variable_scope(scope):
+
+            state = layers.batch_norm(state, center=True, scale=True,
+                                          is_training=self.phase,
+                                          scope='bn')
 
             out = layers.fully_connected(inputs=state, num_outputs=400,
                 weights_initializer=layers.xavier_initializer(), reuse=reuse,
@@ -31,17 +34,26 @@ class BootstrappedAC(Linear):
         heads = [None]*self.num_heads
         for i in range(self.num_heads):
             with tf.variable_scope(scope+'_head_{}'.format(i)):
+
                 heads[i] = layers.fully_connected(inputs=out, num_outputs=self.action_shape,
                     weights_initializer=layers.xavier_initializer(), reuse=reuse,
-                    scope=str(i),activation_fn=None)
+                    scope=str(i),activation_fn=tf.nn.tanh)
+
+                heads[i] = heads[i]*self.config.max_action
         return heads
 
     def build_qvalue_list(self,state,action,scope,reuse=False):
         with tf.variable_scope(scope):
-            inp = tf.concat([state,action],axis=1)
-            out = layers.fully_connected(inputs=inp, num_outputs=400,
+
+            state = layers.batch_norm(state, center=True, scale=True,
+                                          is_training=self.phase,
+                                          scope='bn', reuse=reuse)
+
+            out = layers.fully_connected(inputs=state, num_outputs=400,
                 weights_initializer=layers.xavier_initializer(), reuse=reuse,
                 scope='fc1')
+
+            out = tf.concat([out,action],axis=1)
 
             out = layers.fully_connected(inputs=out, num_outputs=300,
                 weights_initializer=layers.xavier_initializer(), reuse=reuse,
@@ -76,7 +88,7 @@ class BootstrappedAC(Linear):
     def sample_policy(self):
         self.head = np.random.randint(self.num_heads)
         print "Head = {}".format(self.head)
-        
+
     def get_policy_identifier(self):
         return self.head
 
