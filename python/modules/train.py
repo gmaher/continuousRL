@@ -1,8 +1,10 @@
 import numpy as np
+from Noise import OUNoise
 def train_loop(sess, model, env, replay_buffer, config, decay=0.995):
     count = 0
     rewards = []
-    noise = 1.0
+    noise = OUNoise(env.action_space.shape[0])
+    noise_scale = 1.0
     rewards_mean = []
     for ep in range(config.num_episodes):
         s = env.reset()
@@ -11,15 +13,16 @@ def train_loop(sess, model, env, replay_buffer, config, decay=0.995):
 
         done = False
 
-
-        noise = noise*decay
+        noise.reset()
+        noise_scale = noise_scale*decay
         R = 0
         it = 0
         while not done:
             count += 1
             it+= 1
             s_tf = s.reshape((1,len(s)))
-            a = sess.run(model.act(), {model.s:s_tf,model.phase:0})[0] + noise*np.random.randn(1)
+            eps = noise_scale*noise.noise()
+            a = sess.run(model.act(), {model.s:s_tf,model.phase:0})[0] + eps
 
             st,r,done,_ = env.step(a)
             # st = np.array(st).reshape((1,len(env.observation_space.state)))
@@ -76,7 +79,7 @@ def train_loop(sess, model, env, replay_buffer, config, decay=0.995):
         else:
             rewards_mean.append(np.mean(rewards[-100:]))
 
-        rewards_mean.append(R)
+
         print 'episode {}: r {}, R {}, final state {}, action{},  Q {}, Q_loss {}, Qnorm {}, Munorm: {}'\
             .format(ep,r, R, s, a, q,q_loss,qnorm,munorm)
 

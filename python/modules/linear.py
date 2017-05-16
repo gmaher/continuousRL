@@ -28,6 +28,10 @@ class Linear:
         self.q_target = self.build_critic(self.sp,self.action_target,'q_target')
 
         self.q_loss = self.build_critic_loss()
+
+        self.mu_reg_loss = self.regularize('mu/','mu_reg')
+        self.q_reg_loss = self.regularize('q/','q_reg')
+
         self.q_train,self.q_grad = self.build_critic_train('q/')
 
         self.mu_train, self.mu_grad = self.build_actor_train('mu/')
@@ -51,6 +55,7 @@ class Linear:
         mask = tf.cast(mask,dtype=tf.float32)
 
         diff = tf.square(self.r + self.config.gamma*mask*self.q_target - self.q)
+
         return tf.reduce_mean(diff)
 
     def build_critic_train(self,scope):
@@ -64,12 +69,12 @@ class Linear:
             train_ops = []
             grad_norm_ops = []
 
-            loss = self.q_loss
+            loss = self.q_loss+self.q_reg_loss
             grads = opt.compute_gradients(loss,var_list)
 
             # if self.config.grad_clip:
             #     grads = [(tf.clip_by_norm(g,self.config.clip_val),var) for g,var in grads]
-
+            self.q_grads = [g for g,v in grads]
             train_ops.append(opt.apply_gradients(grads))
             g = [G[0] for G in grads]
             grad_norm_ops.append(tf.global_norm(g))
@@ -87,12 +92,14 @@ class Linear:
         grads=[]
         for var in var_list:
             g = tf.gradients(self.action,var,-q_grad)[0]
-            grads.append((g,var))
+            g_reg = tf.gradients(self.mu_reg_loss,var)[0]
+            grads.append((g+g_reg,var))
 
-        print grads
+
         # if self.config.grad_clip:
         #     grads = [(tf.clip_by_norm(g,self.config.clip_val),var) for g,var in grads]
         # print grads
+        self.mu_grads = [g for g,v in grads]
         train = opt.apply_gradients(grads)
         norm = tf.global_norm([G[0] for G in grads])
         return train,norm
@@ -108,6 +115,17 @@ class Linear:
             oplist.append(tf.assign(target_list[i],update))
 
         return tf.group(*oplist)
+
+    def regularize(self, scope,reg_scope):
+
+        with tf.variable_scope(reg_scope):
+            regularizer = layers.l2_regularizer(self.config.l2reg)
+            trainable_var_key = tf.GraphKeys.TRAINABLE_VARIABLES
+            var_list = tf.get_collection(key=trainable_var_key, scope=scope)
+            layers.apply_regularization(regularizer,var_list)
+        reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope=reg_scope)
+
+        return sum(reg_losses)
 
     def sample_policy(self):
         pass
