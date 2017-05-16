@@ -121,3 +121,10 @@ if np.abs(tf_mu_grad[0]-mu_grad)>1e-3:
 ###############################################
 # Test model update
 ###############################################
+before = sess.run(q_target_list+mu_target_list,{L.tau:conf.tau})
+before_real = sess.run(q_list+mu_list,{L.tau:conf.tau})
+sess.run(L.update_targets(),{L.tau:conf.tau})
+after = sess.run(q_target_list+mu_target_list,{L.tau:conf.tau})
+
+anal = [0.99*g2+(1-0.99)*g1 for g1,g2 in zip(before_real,before)]
+diffs = [np.mean(np.abs(g1-g2)) for g1,g2 in zip(anal,after)]
