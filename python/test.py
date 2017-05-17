@@ -128,3 +128,6 @@ after = sess.run(q_target_list+mu_target_list,{L.tau:conf.tau})
 
 anal = [0.99*g2+(1-0.99)*g1 for g1,g2 in zip(before_real,before)]
 diffs = [np.mean(np.abs(g1-g2)) for g1,g2 in zip(anal,after)]
+
+if np.mean(diffs) > 1e-3:
+    raise RuntimeError('linear error: updates diffs = {}, expected 1e-3'.format(np.mean(diffs)))

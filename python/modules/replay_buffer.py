@@ -1,12 +1,16 @@
 import numpy as np
 
 class ReplayBuffer:
-    def __init__(self):
+    def __init__(self, limit=1000000):
         self.buffer_ = {}
-
+        self.limit = limit
+        self.count = 0
     def append(self,tup,key):
         if not self.buffer_.has_key(key):
             self.buffer_[key] = []
+
+        if len(self.buffer_[key]) > self.limit:
+            self.buffer_[key].pop(0)
 
         self.buffer_[key].append(tup)
 

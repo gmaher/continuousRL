@@ -29,8 +29,9 @@ class Linear:
 
         self.q_loss = self.build_critic_loss()
 
-        self.mu_reg_loss = self.regularize('mu/','mu_reg')
-        self.q_reg_loss = self.regularize('q/','q_reg')
+        self.mu_reg_loss = self.regularize('mu/','mu_reg',config.mu_reg)
+        #self.mu_reg_loss = 0.0
+        self.q_reg_loss = self.regularize('q/','q_reg',config.l2reg)
 
         self.q_train,self.q_grad = self.build_critic_train('q/')
 
@@ -74,7 +75,7 @@ class Linear:
 
             # if self.config.grad_clip:
             #     grads = [(tf.clip_by_norm(g,self.config.clip_val),var) for g,var in grads]
-            self.q_grads = [g for g,v in grads]
+            #self.q_grads = [g for g,v in grads]
             train_ops.append(opt.apply_gradients(grads))
             g = [G[0] for G in grads]
             grad_norm_ops.append(tf.global_norm(g))
@@ -93,13 +94,13 @@ class Linear:
         for var in var_list:
             g = tf.gradients(self.action,var,-q_grad)[0]
             g_reg = tf.gradients(self.mu_reg_loss,var)[0]
-            grads.append((g+g_reg,var))
+            grads.append((g,var))
 
 
         # if self.config.grad_clip:
         #     grads = [(tf.clip_by_norm(g,self.config.clip_val),var) for g,var in grads]
-        # print grads
-        self.mu_grads = [g for g,v in grads]
+        print grads
+        #self.mu_grads = [g for g,v in grads]
         train = opt.apply_gradients(grads)
         norm = tf.global_norm([G[0] for G in grads])
         return train,norm
@@ -112,14 +113,15 @@ class Linear:
         oplist = []
         for i in range(len(main_list)):
             update = self.tau*main_list[i] + (1.0-self.tau)*target_list[i]
+            #update = 1.0*main_list[i]
             oplist.append(tf.assign(target_list[i],update))
 
         return tf.group(*oplist)
 
-    def regularize(self, scope,reg_scope):
+    def regularize(self, scope,reg_scope,scale):
 
         with tf.variable_scope(reg_scope):
-            regularizer = layers.l2_regularizer(self.config.l2reg)
+            regularizer = layers.l2_regularizer(scale)
             trainable_var_key = tf.GraphKeys.TRAINABLE_VARIABLES
             var_list = tf.get_collection(key=trainable_var_key, scope=scope)
             layers.apply_regularization(regularizer,var_list)

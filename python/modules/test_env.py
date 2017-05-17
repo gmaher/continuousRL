@@ -88,24 +88,31 @@ class EnvTest2(object):
         self.T = 2.0
         self.num_iters = 0
         self.done = False
+        self.MAX = 5
         self.observation_space = obs()
-        self.observation_space.state = 2*np.random.rand(2)-1
+        self.observation_space.state = (2*np.random.rand(2)-1)*self.MAX
         self.observation_space.state[1] *= 0.1
         self.action_space = action_space(1)
+        self.action_space.high = 2.0
+        self.action_space.shape = [1]
+        self.observation_space.shape = (2,1)
 
     def reset(self):
         self.num_iters = 0
         self.t = 0.0
-        self.observation_space.state = 2*np.random.rand(2)-1
+        self.observation_space.state = (2*np.random.rand(2)-1)*self.MAX
         self.observation_space.state[1] *= 0.1
         self.done = False
         return self.observation_space.state
 
     def step(self, action):
-        if np.abs(self.observation_space.state[0]) > 2:
+        reward = 0.0
+        if np.abs(self.observation_space.state[0]) > self.MAX:
             self.done = True
+            reward = -np.abs(self.observation_space.state[0])
         if self.t >= self.T:
             self.done = True
+            reward = -np.abs(self.observation_space.state[0])
 
         self.num_iters += 1
         self.t += self.dt
@@ -113,10 +120,6 @@ class EnvTest2(object):
         self.observation_space.state[1] += self.dt*action[0]
         self.observation_space.state[0] += self.observation_space.state[1]*self.dt
 
-        if self.done:
-            reward = -self.observation_space.state[0]**2
-        else:
-            reward = 0.0
         return self.observation_space.state, reward, self.done, []
 
     def render(self):
@@ -131,26 +134,26 @@ class EnvTest3(object):
         self.num_iters = 0
         self.done = False
         self.observation_space = obs()
-        self.observation_space.state = 2*np.random.rand(1)-1
+        self.observation_space.state = (2*np.random.rand(1)-1)*0.5
         self.observation_space.shape = np.array([1])
         self.action_space = action_space(1)
-        self.action_space.high = 1.0
+        self.action_space.high = 5.0
         self.action_space.shape = np.array([1])
     def reset(self):
         self.num_iters = 0
         self.t = 0.0
-        self.observation_space.state = 2*np.random.rand(1)-1
+        self.observation_space.state = (2*np.random.rand(1)-1)*0.5
         self.done = False
         return self.observation_space.state
 
     def step(self, action):
-        reward = 0.0
+        reward = self.observation_space.state[0]
         if self.observation_space.state[0] >= 1:
             self.done = True
-            reward = 1.0
+            # reward = 1.0
         elif self.observation_space.state[0] <= -1:
             self.done=True
-            reward = -1.0
+            # reward = -1.0
         if self.t >= self.T:
             self.done = True
 

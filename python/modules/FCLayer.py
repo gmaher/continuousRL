@@ -12,9 +12,10 @@ class FCLayer:
         with tf.variable_scope(scope):
             self.shape = shape
             self.activation = activation
-
-            W = tf.Variable(tf.random_normal(shape, stddev=init), name='W')
-            b = tf.Variable(tf.random_normal([shape[1]],stddev=init), name = 'b')
+            if init=='xavier':
+                init = np.sqrt(3.0/(shape[0]+shape[1]))
+            W = tf.Variable(tf.random_uniform(shape, -init,init), name='W')
+            b = tf.Variable(tf.random_uniform([shape[1]],-init,init), name = 'b')
             self.weights = []
             self.weights.append(W)
             self.weights.append(b)
