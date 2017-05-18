@@ -91,9 +91,9 @@ class EnvTest2(object):
         self.MAX = 5
         self.observation_space = obs()
         self.observation_space.state = (2*np.random.rand(2)-1)*self.MAX
-        self.observation_space.state[1] *= 0.1
+        self.observation_space.state[1] *= 0.0
         self.action_space = action_space(1)
-        self.action_space.high = 2.0
+        self.action_space.high = 10.0
         self.action_space.shape = [1]
         self.observation_space.shape = (2,1)
 
@@ -101,7 +101,7 @@ class EnvTest2(object):
         self.num_iters = 0
         self.t = 0.0
         self.observation_space.state = (2*np.random.rand(2)-1)*self.MAX
-        self.observation_space.state[1] *= 0.1
+        self.observation_space.state[1] *= 0.0
         self.done = False
         return self.observation_space.state
 

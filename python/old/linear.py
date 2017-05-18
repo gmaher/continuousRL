@@ -70,7 +70,8 @@ class Linear:
             train_ops = []
             grad_norm_ops = []
 
-            loss = self.q_loss+self.q_reg_loss
+            #loss = self.q_loss+self.q_reg_loss
+            loss = self.q_loss
             grads = opt.compute_gradients(loss,var_list)
 
             # if self.config.grad_clip:
