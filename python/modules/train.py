@@ -18,7 +18,7 @@ def opt(state, config):
     if state[0] > 0:
         return -config.max_action
 
-def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.95):
+def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.99):
     count = 0
     rewards = []
     noise_scale = 1.0
@@ -28,33 +28,34 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.95):
         s = env.reset()
         done = False
         if ep > config.start_train:
-            # noise_scale = np.exp(-(ep-config.start_train)/25)
+            #noise_scale = np.exp(-(ep-config.start_train)/25)
             noise_scale = noise_scale*decay
         if noise_scale < config.noise_min:
             noise_scale = config.noise_min
         R = 0
         it = 0
         for j in range(config.max_steps):
-            if ep%config.render_frequency == 0 and ep > config.start_train:
-                env.render()
+#            if ep%config.render_frequency == 0 and ep > config.start_train:
+               # env.render()
             count += 1
             it +=1
             s_tf = s.reshape((1,len(s)))
 
             eps = noise.noise()*noise_scale
-            a = sess.run(actor.action, {actor.s:s_tf,actor.phase:0})[0]
+            a = sess.run(actor.action, {actor.s:s_tf,actor.phase:0})[0][0]
 
             a += eps
             q = 0
             q_loss = 0
             #a = opt(s_tf[:,0],config)
             if a > config.max_action:
-                a = np.array(config.max_action)
+                a = config.max_action
             if a < -config.max_action:
-                a = np.array(-config.max_action)
+                a = -config.max_action
 
             st,r,done,_ = env.step(a)
-            r = r/25.0
+            #r = r/25.0
+	    a = np.array(a)
             replay_buffer.append((s,a,r,st,done),key=0)
 
             s=st.copy()
