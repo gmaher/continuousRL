@@ -38,10 +38,12 @@ class Critic:
     def build_train(self,scope):
         var_list = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES,scope=scope)
 
-        loss = tf.reduce_mean(tf.square(self.y-self.q))
+        loss = tf.reduce_sum(tf.square(self.y-self.q))
         for w in var_list:
             if 'W' in w.name:
-                loss += len(var_list)/2*self.config.l2reg*tf.reduce_mean(tf.square(w))
+                loss += 1.0/2*self.config.l2reg*tf.reduce_sum(tf.square(w))
+
+        self.loss = loss
         opt = tf.train.AdamOptimizer(self.lr)
         #opt = tf.train.MomentumOptimizer(self.lr,0.1)
         #opt = tf.train.RMSPropOptimizer(self.lr)

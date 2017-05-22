@@ -15,5 +15,5 @@ class Config():
     noise_min = 0.01
     max_steps = 2000
     plot_frequency = 5
-    start_train = 2
+    start_train = 10
     train_iterations = 1

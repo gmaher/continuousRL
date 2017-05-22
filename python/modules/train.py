@@ -34,7 +34,7 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.98):
         R = 0
         it = 0
         for j in range(config.max_steps):
-            print j
+            #print j
             if ep%config.render_frequency == 0 and ep > config.start_train:
                env.render()
             count += 1
@@ -103,7 +103,11 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.98):
                 })
 
                 q = np.mean(q)
-                q_loss = np.mean((y-q)**2)
+                q_loss = sess.run(critic.loss,
+                                        {critic.s:tup[0],
+                                        critic.a:tup[1],
+                                        critic.y:y,
+                                        critic.lr:config.lr})
             R += r
             if done:
                 break
