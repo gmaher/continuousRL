@@ -27,8 +27,8 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.98):
         s = env.reset()
         done = False
         if ep > config.start_train:
-            #noise_scale = np.exp(-(ep-config.start_train)/25)
-            noise_scale = noise_scale*decay
+            noise_scale = np.exp(-(ep-config.start_train)/25)
+            #noise_scale = noise_scale*decay
         if noise_scale < config.noise_min:
             noise_scale = config.noise_min
         R = 0
@@ -105,8 +105,8 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.98):
                 q = np.mean(q)
                 q_loss = np.mean((y-q)**2)
             R += r
-            # if done:
-            #     break
+            if done:
+                break
         rewards.append(R)
         if count < 100:
             rewards_mean.append(0)

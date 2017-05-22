@@ -498,6 +498,7 @@ def train(sess, env, actor, critic, saver, replay_buffer):
             ep_loss.append(loss)
 
             if terminal or j == MAX_EP_STEPS - 1:
+                print j
                 # Add results to summaries
                 episode_summary = tf.Summary()
                 episode_summary.value.add(tag="Reward", simple_value=np.sum(ep_rewards))
@@ -535,12 +536,12 @@ def train(sess, env, actor, critic, saver, replay_buffer):
 config = tf.ConfigProto()
 config.gpu_options.per_process_gpu_memory_fraction = 0.05
 with tf.Session(config=config) as sess:
-    #env = gym.make(ENVIRONMENT)
-    #env = wrappers.Monitor(env, os.path.join(SUMMARY_DIR, ENVIRONMENT+'-experiment'), force=True)
-    import sys
-    sys.path.append('../modules/')
-    from env import car_1
-    env = car_1()
+    env = gym.make(ENVIRONMENT)
+    env = wrappers.Monitor(env, os.path.join(SUMMARY_DIR, ENVIRONMENT+'-experiment'), force=True)
+    #import sys
+    #sys.path.append('../modules/')
+    #from env import car_1
+    #env = car_1()
     env.action_space.low = -env.action_space.high
     tf.set_random_seed(RANDOM_SEED)
 
