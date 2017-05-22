@@ -529,54 +529,53 @@ def train(sess, env, actor, critic, saver, replay_buffer):
             print("Model saved in %.1f" % (time() - save_start), "seconds. Path: %s" % save_path)
 
 
-def main(_):
-    # Need to split actor & critic into different graphs/sessions to prevent serialisation errors
-    # See https://github.com/tflearn/tflearn/issues/381
-    config = tf.ConfigProto()
-    config.gpu_options.per_process_gpu_memory_fraction = 0.05
-    with tf.Session(config=config) as sess:
-        env = gym.make(ENVIRONMENT)
-        env = wrappers.Monitor(env, os.path.join(SUMMARY_DIR, ENVIRONMENT+'-experiment'), force=True)
-        tf.set_random_seed(RANDOM_SEED)
 
-        state_dim = env.observation_space.shape[0]
-        action_dim = env.action_space.shape[0]
-        action_bound = env.action_space.high
-        # Ensure action bound is symmetric
-        assert (env.action_space.high == -env.action_space.low)
+# Need to split actor & critic into different graphs/sessions to prevent serialisation errors
+# See https://github.com/tflearn/tflearn/issues/381
+config = tf.ConfigProto()
+config.gpu_options.per_process_gpu_memory_fraction = 0.05
+with tf.Session(config=config) as sess:
+    #env = gym.make(ENVIRONMENT)
+    #env = wrappers.Monitor(env, os.path.join(SUMMARY_DIR, ENVIRONMENT+'-experiment'), force=True)
+    import sys
+    sys.path.append('../modules/')
+    from env import car_1
+    env = car_1()
+    env.action_space.low = -env.action_space.high
+    tf.set_random_seed(RANDOM_SEED)
 
-        # Restore networks and replay buffer from disk otherwise create new ones
-        if RESTORE_DATE is not None:
-            saver = tf.train.import_meta_graph(os.path.join(SUMMARY_DIR, "ddpg_model.meta"))
-            saver.restore(sess, os.path.join(SUMMARY_DIR, "ddpg_model"))
-            actor = ActorNetwork(sess, state_dim, action_dim, action_bound, ACTOR_LEARNING_RATE, TAU, restore=True)
-            critic = CriticNetwork(sess, state_dim, action_dim, CRITIC_LEARNING_RATE, TAU, restore=True)
+    state_dim = env.observation_space.shape[0]
+    action_dim = env.action_space.shape[0]
+    action_bound = env.action_space.high
+    # Ensure action bound is symmetric
+    assert (env.action_space.high == -env.action_space.low)
 
-            # Initialise the uninitialised variables
-            uninitialized_vars = []
-            for var in tf.global_variables():
-                try:
-                    sess.run(var)
-                except tf.errors.FailedPreconditionError:
-                    uninitialized_vars.append(var)
-            sess.run(tf.variables_initializer(uninitialized_vars))
+    # Restore networks and replay buffer from disk otherwise create new ones
+    if RESTORE_DATE is not None:
+        saver = tf.train.import_meta_graph(os.path.join(SUMMARY_DIR, "ddpg_model.meta"))
+        saver.restore(sess, os.path.join(SUMMARY_DIR, "ddpg_model"))
+        actor = ActorNetwork(sess, state_dim, action_dim, action_bound, ACTOR_LEARNING_RATE, TAU, restore=True)
+        critic = CriticNetwork(sess, state_dim, action_dim, CRITIC_LEARNING_RATE, TAU, restore=True)
 
-            replay_buffer = pickle.load(open(os.path.join(SUMMARY_DIR, "replay_buffer.pkl"), "rb"))
+        # Initialise the uninitialised variables
+        uninitialized_vars = []
+        for var in tf.global_variables():
+            try:
+                sess.run(var)
+            except tf.errors.FailedPreconditionError:
+                uninitialized_vars.append(var)
+        sess.run(tf.variables_initializer(uninitialized_vars))
 
-            print("Model restored from %s" % os.path.join(SUMMARY_DIR, "ddpg_model"))
-        else:
-            actor = ActorNetwork(sess, state_dim, action_dim, action_bound, ACTOR_LEARNING_RATE, TAU)
-            critic = CriticNetwork(sess, state_dim, action_dim, CRITIC_LEARNING_RATE, TAU)
-            saver = tf.train.Saver()
-            replay_buffer = ReplayBuffer(BUFFER_SIZE, RANDOM_SEED)
+        replay_buffer = pickle.load(open(os.path.join(SUMMARY_DIR, "replay_buffer.pkl"), "rb"))
 
-        # Start training given a session, environment, actor & critic
-        train(sess, env, actor, critic, saver, replay_buffer)
-        env.close()
-        #gym.upload(os.path.join(SUMMARY_DIR, ENVIRONMENT+'-experiment'), api_key='XXXXXXXXXXX')
+        print("Model restored from %s" % os.path.join(SUMMARY_DIR, "ddpg_model"))
+    else:
+        actor = ActorNetwork(sess, state_dim, action_dim, action_bound, ACTOR_LEARNING_RATE, TAU)
+        critic = CriticNetwork(sess, state_dim, action_dim, CRITIC_LEARNING_RATE, TAU)
+        saver = tf.train.Saver()
+        replay_buffer = ReplayBuffer(BUFFER_SIZE, RANDOM_SEED)
 
-
-if __name__ == '__main__':
-    # Quick wrapper that handles flag parsing and then dispatches to your own main
-    # http://stackoverflow.com/questions/33703624/how-does-tf-app-run-work
-    tf.app.run()
+    # Start training given a session, environment, actor & critic
+    train(sess, env, actor, critic, saver, replay_buffer)
+    env.close()
+    #gym.upload(os.path.join(SUMMARY_DIR, ENVIRONMENT+'-experiment'), api_key='XXXXXXXXXXX')

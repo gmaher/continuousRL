@@ -20,7 +20,7 @@ def FC(x,shape,activation,scope,init=1e-3):
         elif activation == 'sigmoid':
             activation = tf.nn.sigmoid
         elif activation == 'tanh':
-            activation = tf.nn.tanh
+            activation = tf.tanh
         else:
             activation = tf.identity
 

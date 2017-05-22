@@ -24,20 +24,27 @@ class Critic:
         self.update = self.build_update('critic/main','critic/target')
 
         self.critic_gradient = tf.gradients(self.q,self.a)[0]
-        
+
     def build_q(self,scope,reuse=False):
         with tf.variable_scope(scope,reuse=reuse):
-            inp = tf.concat([self.s,self.a],axis=1)
-            out = FC(inp,shape=[self.input_shape+self.action_shape,self.value_shape],
-                activation='None',scope='fc',init='xavier')
+            out = FC(self.s,shape=[self.input_shape,400],activation='relu',scope='fc1',init='xavier')
+            out = FC(out,shape=[400,300],activation='relu',scope='fc2',init='xavier')
+
+            a_out = FC(self.a,shape=[self.action_shape,300],activation='relu',scope='fca',init='xavier')
+            inp = tf.concat([out, a_out],axis=1)
+            out = FC(inp,shape=[600,self.value_shape],activation=None,scope='fc3',init=3e-3)
             return out
 
     def build_train(self,scope):
         var_list = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES,scope=scope)
 
         loss = tf.reduce_mean(tf.square(self.y-self.q))
-
+        for w in var_list:
+            if 'W' in w.name:
+                loss += len(var_list)/2*self.config.l2reg*tf.reduce_mean(tf.square(w))
         opt = tf.train.AdamOptimizer(self.lr)
+        #opt = tf.train.MomentumOptimizer(self.lr,0.1)
+        #opt = tf.train.RMSPropOptimizer(self.lr)
         train = opt.minimize(loss)
         return train
 

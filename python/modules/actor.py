@@ -23,7 +23,20 @@ class Actor:
 
     def build_action(self,scope,reuse=False):
         with tf.variable_scope(scope,reuse=reuse):
-            out = FC(self.s,shape=[self.input_shape,self.action_shape],activation='tanh',scope='fc',init='xavier')
+            state = layers.batch_norm(self.s, center=True, scale=True,
+                                          is_training=self.phase,
+                                          scope='bn', reuse=reuse)
+            out = FC(self.s,shape=[self.input_shape,400],activation='relu',scope='fc1',init='xavier')
+            #out = layers.batch_norm(out, center=True, scale=True,
+            #                              is_training=self.phase,
+            #                              scope='bn1', reuse=reuse)
+            out = FC(out,shape=[400,300],activation='relu',scope='fc2',init='xavier')
+            #out = layers.batch_norm(out, center=True, scale=True,
+            #                              is_training=self.phase,
+            #                              scope='bn2', reuse=reuse)
+
+            out = FC(out,shape=[300,self.action_shape],activation='tanh',scope='fc3',init=3e-3)
+
             return out*self.config.max_action
 
     def build_train(self,scope):
@@ -32,6 +45,8 @@ class Actor:
         G = [(g,v) for g,v in zip(G,var_list)]
 
         opt = tf.train.AdamOptimizer(self.lr)
+        #opt = tf.train.MomentumOptimizer(self.lr,0.1)
+        #opt = tf.train.RMSPropOptimizer(self.lr)
         train = opt.apply_gradients(G)
         norm = tf.global_norm([g[0] for g in G])
         return train,norm
