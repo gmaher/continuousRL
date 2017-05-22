@@ -23,14 +23,14 @@ class Actor:
 
     def build_action(self,scope,reuse=False):
         with tf.variable_scope(scope,reuse=reuse):
-            state = layers.batch_norm(self.s, center=True, scale=True,
-                                          is_training=self.phase,
-                                          scope='bn', reuse=reuse)
-            out = FC(self.s,shape=[self.input_shape,400],activation='relu',scope='fc1',init='xavier')
+            # state = layers.batch_norm(self.s, center=True, scale=True,
+            #                               is_training=self.phase,
+            #                               scope='bn', reuse=reuse)
+            out = FC(self.s,shape=[self.input_shape,400],activation='relu',scope='fc1',init=np.sqrt(2.0/self.input_shape))
             #out = layers.batch_norm(out, center=True, scale=True,
             #                              is_training=self.phase,
             #                              scope='bn1', reuse=reuse)
-            out = FC(out,shape=[400,300],activation='relu',scope='fc2',init='xavier')
+            out = FC(out,shape=[400,300],activation='relu',scope='fc2',init=np.sqrt(2.0/400))
             #out = layers.batch_norm(out, center=True, scale=True,
             #                              is_training=self.phase,
             #                              scope='bn2', reuse=reuse)

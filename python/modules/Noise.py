@@ -18,3 +18,13 @@ class OUNoise:
         dx = self.theta * (self.mu - x) + self.sigma * np.random.randn(len(x))
         self.state = x + dx
         return self.state
+
+if __name__ == '__main__':
+    ou = OUNoise(3)
+    states = []
+    for i in range(1000):
+        states.append(ou.noise())
+    import matplotlib.pyplot as plt
+
+    plt.plot(states)
+    plt.show()

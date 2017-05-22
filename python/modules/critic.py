@@ -27,12 +27,12 @@ class Critic:
 
     def build_q(self,scope,reuse=False):
         with tf.variable_scope(scope,reuse=reuse):
-            out = FC(self.s,shape=[self.input_shape,400],activation='relu',scope='fc1',init='xavier')
-            out = FC(out,shape=[400,300],activation='relu',scope='fc2',init='xavier')
+            out = FC(self.s,shape=[self.input_shape,400],activation='relu',scope='fc1',init=np.sqrt(2.0/self.input_shape))
+            out = FC(out,shape=[400,300],activation=None,scope='fc2',init=np.sqrt(2.0/400))
 
-            a_out = FC(self.a,shape=[self.action_shape,300],activation='relu',scope='fca',init='xavier')
-            inp = tf.concat([out, a_out],axis=1)
-            out = FC(inp,shape=[600,self.value_shape],activation=None,scope='fc3',init=3e-3)
+            a_out = FC(self.a,shape=[self.action_shape,300],activation=None,scope='fca',init=np.sqrt(2.0/self.action_shape),bias=False)
+            inp = tf.nn.relu(a_out+out)
+            out = FC(inp,shape=[300,self.value_shape],activation=None,scope='fc3',init=3e-3)
             return out
 
     def build_train(self,scope):

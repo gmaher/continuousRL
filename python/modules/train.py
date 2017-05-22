@@ -17,8 +17,7 @@ def opt(state, config):
         return config.max_action
     if state[0] > 0:
         return -config.max_action
-
-def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.99):
+def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.98):
     count = 0
     rewards = []
     noise_scale = 1.0
@@ -35,8 +34,9 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.99):
         R = 0
         it = 0
         for j in range(config.max_steps):
-#            if ep%config.render_frequency == 0 and ep > config.start_train:
-               # env.render()
+            print j
+            if ep%config.render_frequency == 0 and ep > config.start_train:
+               env.render()
             count += 1
             it +=1
             s_tf = s.reshape((1,len(s)))
@@ -55,7 +55,7 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.99):
 
             st,r,done,_ = env.step(a)
             #r = r/25.0
-	    a = np.array(a)
+            a = np.array(a)
             replay_buffer.append((s,a,r,st,done),key=0)
 
             s=st.copy()
@@ -104,9 +104,9 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.99):
 
                 q = np.mean(q)
                 q_loss = np.mean((y-q)**2)
-            R += config.gamma**it*r
-            if done:
-                break
+            R += r
+            # if done:
+            #     break
         rewards.append(R)
         if count < 100:
             rewards_mean.append(0)
@@ -119,7 +119,7 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.99):
 
         if ep%config.plot_frequency == 0:
             plt.figure()
-            plt.plot(rewards_mean,linewidth=2)
+            plt.plot(rewards,linewidth=2)
             plt.xlabel("episode")
             plt.ylabel("average reward")
             plt.savefig('reward_hist.png')

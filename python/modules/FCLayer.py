@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-def FC(x,shape,activation,scope,init=1e-3):
+def FC(x,shape,activation,scope,init=1e-3, bias=True):
     """
     initializer for a fully-connected layer with tensorflow
     inputs:
@@ -23,7 +23,9 @@ def FC(x,shape,activation,scope,init=1e-3):
             activation = tf.tanh
         else:
             activation = tf.identity
-
-        h = tf.matmul(x,W)+b
+        if bias:
+            h = tf.matmul(x,W)+b
+        else:
+            h = tf.matmul(x,W)
         a = activation(h)
         return a
