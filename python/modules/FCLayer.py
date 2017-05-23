@@ -11,7 +11,7 @@ def FC(x,shape,activation,scope,init=1e-3, bias=True):
     """
     with tf.variable_scope(scope):
         if init=='xavier':
-            init = np.sqrt(6.0/(shape[0]+shape[1]))
+            init = np.sqrt(2.0/(shape[0]+shape[1]))
         W = tf.Variable(tf.random_uniform(shape, -init,init), name='W')
         b = tf.Variable(tf.random_uniform([shape[1]],-init,init), name = 'b')
 

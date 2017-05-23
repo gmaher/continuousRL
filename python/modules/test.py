@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-
+import os
 from actor import Actor
 from critic import Critic
 import sys
@@ -10,9 +10,24 @@ from env import car_1
 from train import train_loop
 from replay_buffer import ReplayBuffer
 import gym
+import argparse
+np.random.seed(1)
+tf.set_random_seed(1)
+#Get MNIST data from tensorflow
+parser = argparse.ArgumentParser()
+parser.add_argument('--restore',default=False)
+args = parser.parse_args()
+
+restore = args.restore
+
 config = Config()
+
+#E = 'Pendulum-v0'
+#E = 'MountainCarContinuous-v0'
+E = 'BipedalWalker-v2'
 #env = car_1()
-env = gym.make('Pendulum-v0')
+#env = gym.make('Pendulum-v0')
+env = gym.make(E)
 #env = gym.make('InvertedPendulum-v1')
 action_shape = [env.action_space.shape[0]]
 value_shape = [1]
@@ -23,7 +38,18 @@ replay = ReplayBuffer()
 A = Actor(state_shape, action_shape,value_shape,config)
 C = Critic(state_shape, action_shape,value_shape,config)
 
+def mkdir(fn):
+    if not os.path.exists(os.path.abspath(fn)):
+        os.mkdir(os.path.abspath(fn))
+d = './saved/'+E+'/'
+mkdir('./saved')
+mkdir(d)
+
 sess = tf.Session()
 sess.run(tf.initialize_all_variables())
 
-train_loop(sess, A, C, env, replay, config)
+saver = tf.train.Saver()
+if restore:
+    saver.restore(sess,plot_dir+'model.ckpt')
+    print "Restored tf model"
+train_loop(sess, A, C, env, replay, config,d=d)

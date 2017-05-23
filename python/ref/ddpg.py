@@ -185,9 +185,14 @@ class ActorNetwork(object):
             self.optimize = tf.get_collection('Actor_optimize')[0]
 
         # Op for periodically updating target network with online network weights
+        # self.update_target_net_params = \
+        #     [self.target_net_params[i].assign(tf.multiply(self.net_params[i], self.tau) +
+        #                                       tf.multiply(self.target_net_params[i], 1. - self.tau))
+        #      for i in range(len(self.target_net_params))]
+
         self.update_target_net_params = \
-            [self.target_net_params[i].assign(tf.multiply(self.net_params[i], self.tau) +
-                                              tf.multiply(self.target_net_params[i], 1. - self.tau))
+            [tf.assign(self.target_net_params[i], self.net_params[i]*self.tau +
+                                                  self.target_net_params[i]*(1. - self.tau))
              for i in range(len(self.target_net_params))]
 
         self.num_trainable_vars = len(self.net_params) + len(self.target_net_params)
@@ -197,13 +202,13 @@ class ActorNetwork(object):
         # state_bn = tf.layers.batch_normalization(state, training=self.is_training, scale=False,
         #                                          name='actor_BN_input'+suffix)
         net = tflearn.fully_connected(state, 400, activation='relu', name='actor_L1'+suffix,
-                                      weights_init=tflearn.initializations.variance_scaling(seed=RANDOM_SEED))
+                                      weights_init=tflearn.initializations.variance_scaling(seed=RANDOM_SEED,factor=1.0, mode='FAN_AVG', uniform=True))
         if suffix == "":
             tf.summary.histogram("Actor/Layer1", net.W)
         # net = tf.layers.batch_normalization(net, training=self.is_training, scale=False,
         #                                     name='actor_BN1'+suffix)
         net = tflearn.fully_connected(net, 300, activation='relu', name='actor_L2'+suffix,
-                                      weights_init=tflearn.initializations.variance_scaling(seed=RANDOM_SEED))
+                                      weights_init=tflearn.initializations.variance_scaling(seed=RANDOM_SEED,factor=1.0, mode='FAN_AVG', uniform=True))
         if suffix == "":
             tf.summary.histogram("Actor/Layer2", net.W)
         # net = tf.layers.batch_normalization(net, training=self.is_training, scale=True,
@@ -273,7 +278,9 @@ class CriticNetwork(object):
 
             # Network target (y_i) - Obtained from the target networks
             self.q_value = tf.placeholder(tf.float32, [None, self.action_dim], name="critic_q_value")
-            self.L2 = tf.add_n([L2_DECAY * tf.nn.l2_loss(v) for v in self.network_params if "/W" in v.name])
+            # self.L2 = tf.add_n([L2_DECAY * tf.nn.l2_loss(v) for v in self.network_params if "/W" in v.name])
+            self.L2 = tf.add_n([L2_DECAY * tf.reduce_mean(tf.square(v)) for v in self.network_params if "/W" in v.name])
+
             self.loss = tf.losses.mean_squared_error(self.q_value, self.outputs) + self.L2
             self.optimize = tf.train.AdamOptimizer(self.learning_rate, name='Adam_Critic').minimize(self.loss)
 
@@ -299,9 +306,14 @@ class CriticNetwork(object):
             self.optimize = tf.get_collection('Critic_optimize')[0]
 
         # Op for periodically updating target network with online network weights
+        # self.update_target_net_params = \
+        #     [self.target_network_params[i].assign(tf.multiply(self.network_params[i], self.tau) +
+        #                                           tf.multiply(self.target_network_params[i], 1. - self.tau))
+        #      for i in range(len(self.target_network_params))]
+
         self.update_target_net_params = \
-            [self.target_network_params[i].assign(tf.multiply(self.network_params[i], self.tau) +
-                                                  tf.multiply(self.target_network_params[i], 1. - self.tau))
+            [tf.assign(self.target_network_params[i], self.network_params[i]*self.tau +
+                                                  self.target_network_params[i]*(1. - self.tau))
              for i in range(len(self.target_network_params))]
 
         # Get the gradient of the critic w.r.t. the action
@@ -317,16 +329,16 @@ class CriticNetwork(object):
         # action_bn = tf.layers.batch_normalization(action, training=self.is_training, scale=False,
         #                                           name='critic_BN_action'+suffix)
         net = tflearn.fully_connected(state, 400, activation='relu', name='critic_L1'+suffix,
-                                      weights_init=tflearn.initializations.variance_scaling(seed=RANDOM_SEED))
+                                      weights_init=tflearn.initializations.variance_scaling(seed=RANDOM_SEED,factor=1.0, mode='FAN_AVG', uniform=True))
         if suffix == "":
             tf.summary.histogram("Critic/Layer1", net.W)
         # net = tf.layers.batch_normalization(net, training=self.is_training, scale=False,
         #                                     name='critic_BN1'+suffix)
         # Add the action tensor in the 2nd hidden layer and create variables for W's and b
         s_union = tflearn.fully_connected(net, 300, name="critic_L2_state" + suffix,
-                                          weights_init=tflearn.initializations.variance_scaling(seed=RANDOM_SEED))
+                                          weights_init=tflearn.initializations.variance_scaling(seed=RANDOM_SEED,factor=1.0, mode='FAN_AVG', uniform=True))
         a_union = tflearn.fully_connected(action, 300, name="critic_L2_action" + suffix,
-                                          weights_init=tflearn.initializations.variance_scaling(seed=RANDOM_SEED))
+                                          weights_init=tflearn.initializations.variance_scaling(seed=RANDOM_SEED,factor=1.0, mode='FAN_AVG', uniform=True))
         net = tf.nn.relu(tf.matmul(net, s_union.W) + tf.matmul(action, a_union.W) + s_union.b,
                          name='critic_L2' + suffix)
         if suffix == "":
@@ -431,8 +443,9 @@ def train(sess, env, actor, critic, saver, replay_buffer):
     writer = tf.summary.FileWriter(SUMMARY_DIR, sess.graph)
 
     # Initialize target network weights & noise function
-    actor.update_target_network()
-    critic.update_target_network()
+    #actor.update_target_network()
+    #critic.update_target_network()
+    exploration_noise = OUNoise(actor.action_dim, OU_MU, OU_THETA, OU_SIGMA)
 
     for i in range(MAX_EPISODES):
         start = time()
@@ -440,10 +453,10 @@ def train(sess, env, actor, critic, saver, replay_buffer):
         ep_q_rmse = []
         ep_action_dist = []
         ep_loss = []
-        env.seed(RANDOM_SEED + i)
+        #env.seed(RANDOM_SEED + i)
         s = env.reset()
 
-        exploration_noise = OUNoise(actor.action_dim, OU_MU, OU_THETA, OU_SIGMA, RANDOM_SEED + i)
+        # exploration_noise = OUNoise(actor.action_dim, OU_MU, OU_THETA, OU_SIGMA, RANDOM_SEED + i)
 
         for j in range(MAX_EP_STEPS):
             # if i > 100:
@@ -515,6 +528,7 @@ def train(sess, env, actor, critic, saver, replay_buffer):
                 writer.add_summary(summary_str, i)
                 writer.flush()
                 print('Reward: %.2f' % np.sum(ep_rewards), '\t Episode', i,
+                    '\tQ target: %.2f' % np.mean(target_q),
                       '\tQ RMSE: %.2f' % np.mean(ep_q_rmse),
                       '\tTime: %.1f' % (time() - start),
                       '\tEpsilon: %.3f' % epsilon,

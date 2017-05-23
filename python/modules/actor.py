@@ -53,7 +53,7 @@ class Actor:
 
     def build_update(self,scope,target_scope):
         main_list = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES,scope=scope)
-        target_list = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES,scope=scope)
+        target_list = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES,scope=target_scope)
 
         updates = []
         for m,t in zip(main_list,target_list):

@@ -1,6 +1,7 @@
 import numpy as np
 from Noise import OUNoise
 import matplotlib.pyplot as plt
+import tensorflow as tf
 
 seval_pos = np.zeros((100,2))
 seval_pos[:,1] = 1.0
@@ -17,18 +18,25 @@ def opt(state, config):
         return config.max_action
     if state[0] > 0:
         return -config.max_action
-def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.98):
+def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.99, d='./'):
     count = 0
     rewards = []
     noise_scale = 1.0
     rewards_mean = []
     noise = OUNoise(env.action_space.shape[0])
+
+    #initialize target networks
+
+    sess.run([actor.update,critic.update],{
+    actor.tau:1.0,
+    critic.tau:1.0
+    })
     for ep in range(config.num_episodes):
         s = env.reset()
         done = False
         if ep > config.start_train:
-            noise_scale = np.exp(-(ep-config.start_train)/25)
-            #noise_scale = noise_scale*decay
+            #noise_scale = np.exp(-(ep-config.start_train)/25)
+            noise_scale = noise_scale*decay
         if noise_scale < config.noise_min:
             noise_scale = config.noise_min
         R = 0
@@ -42,16 +50,17 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.98):
             s_tf = s.reshape((1,len(s)))
 
             eps = noise.noise()*noise_scale
-            a = sess.run(actor.action, {actor.s:s_tf,actor.phase:0})[0][0]
+            a = sess.run(actor.action, {actor.s:s_tf,actor.phase:0})[0]
 
             a += eps
             q = 0
             q_loss = 0
             #a = opt(s_tf[:,0],config)
-            if a > config.max_action:
-                a = config.max_action
-            if a < -config.max_action:
-                a = -config.max_action
+            for i in range(len(config.max_action)):
+                if a[i] > config.max_action[i]:
+                    a[i] = config.max_action[i]
+                if a[i] < -config.max_action[i]:
+                    a[i] = -config.max_action[i]
 
             st,r,done,_ = env.step(a)
             #r = r/25.0
@@ -60,7 +69,7 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.98):
 
             s=st.copy()
 
-            if ep > config.start_train:
+            if ep >= config.start_train:
 
                 for k in range(config.train_iterations):
                     tup = replay_buffer.sample(key=0)
@@ -88,8 +97,12 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.98):
                         critic.y:y,
                         critic.lr:config.lr})
 
+                    a_out = sess.run(actor.action,
+                    {actor.s:tup[0],
+                    actor.phase:0})
+
                     critic_gradient = sess.run(critic.critic_gradient,{critic.s:tup[0],
-                        critic.a:tup[1]})
+                        critic.a:a_out})
 
                     sess.run(actor.train,
                         {actor.s:tup[0],
@@ -103,12 +116,13 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.98):
                 })
 
                 q = np.mean(q)
+                qt = np.mean(q_target)
                 q_loss = sess.run(critic.loss,
                                         {critic.s:tup[0],
                                         critic.a:tup[1],
                                         critic.y:y,
                                         critic.lr:config.lr})
-            R += r
+            R += config.gamma**it*r
             if done:
                 break
         rewards.append(R)
@@ -117,16 +131,16 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.98):
         else:
             rewards_mean.append(np.mean(rewards[-100:]))
 
-        if ep >2:
-            print 'episode {}: r {}, R {}, Rbar {}, final state {}, action{},  Q {}, QMSE {}, eps {}'\
-                .format(ep,r, R, rewards_mean[-1], s, a, q, q_loss,noise_scale)
+        if ep >= config.start_train:
+            print 'episode {}: r {}, R {}, Rbar {}, final state {}, action{},  Q {}, Qt {}, QMSE {}, eps {}'\
+                .format(ep,r, R, rewards_mean[-1], s, a, q,qt, q_loss,noise_scale)
 
         if ep%config.plot_frequency == 0:
             plt.figure()
-            plt.plot(rewards,linewidth=2)
+            plt.plot(rewards_mean,linewidth=2)
             plt.xlabel("episode")
-            plt.ylabel("average reward")
-            plt.savefig('reward_hist.png')
+            plt.ylabel("100 episode average reward")
+            plt.savefig(d+'reward_hist.png')
             plt.close()
 
             # a_pos = sess.run(actor.action, {actor.s:seval_pos,actor.phase:0})
@@ -143,4 +157,7 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.98):
             # plt.legend()
             # plt.savefig('action_hist.png')
             # plt.close()
+
+    saver = tf.train.Saver()
+    saver.save(sess,d+'model.ckpt')
     return rewards_mean
