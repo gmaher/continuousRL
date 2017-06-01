@@ -17,13 +17,13 @@ class Critic:
         self.action_shape = action_shape[0]
         self.value_shape = value_shape[0]
 
-        self.q = self.build_q('critic/main')
-        self.target_q = self.build_q('critic/target')
+        self.q_ = self.build_q('critic/main')
+        self.target_q_ = self.build_q('critic/target')
 
-        self.train = self.build_train('critic/main')
-        self.update = self.build_update('critic/main','critic/target')
+        self.train_ = self.build_train('critic/main')
+        self.update_ = self.build_update('critic/main','critic/target')
 
-        self.critic_gradient = tf.gradients(self.q,self.a)[0]
+        self.critic_gradient_ = tf.gradients(self.q_,self.a)[0]
 
     def build_q(self,scope,reuse=False):
         with tf.variable_scope(scope,reuse=reuse):
@@ -38,7 +38,7 @@ class Critic:
     def build_train(self,scope):
         var_list = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES,scope=scope)
 
-        loss = tf.reduce_mean(tf.square(self.y-self.q))
+        loss = tf.reduce_mean(tf.square(self.y-self.q_))
         for w in var_list:
             if 'W' in w.name:
                 loss += 1.0/2*self.config.l2reg*tf.reduce_mean(tf.square(w))
@@ -60,3 +60,19 @@ class Critic:
             u = tf.assign(t,v)
             updates.append(u)
         return updates
+
+    def q(self,sess,s,a):
+        return sess.run(self.q_,{self.s:s,self.a:a})
+
+    def q_target(self,sess,s,a):
+        return sess.run(self.target_q_,{self.s:s,self.a:a})
+
+    def train(self,sess,s,a,y,lr):
+        sess.run(self.train_, {self.s:s, self.a:a, self.y:y,
+            self.lr:lr})
+
+    def update(self,sess,tau):
+        sess.run(self.update_,{self.tau:tau})
+
+    def gradient(self,sess,s,a):
+        return sess.run(self.critic_gradient_,{self.s:s,self.a:a})

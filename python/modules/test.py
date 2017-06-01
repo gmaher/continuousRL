@@ -23,8 +23,8 @@ restore = args.restore
 config = Config()
 
 #E = 'Pendulum-v0'
-#E = 'MountainCarContinuous-v0'
-E = 'BipedalWalker-v2'
+E = 'MountainCarContinuous-v0'
+# E = 'BipedalWalker-v2'
 #env = car_1()
 #env = gym.make('Pendulum-v0')
 env = gym.make(E)

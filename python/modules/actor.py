@@ -15,11 +15,11 @@ class Actor:
         self.input_shape = input_shape[0]
         self.action_shape = action_shape[0]
 
-        self.action = self.build_action('policy/main')
-        self.target_action = self.build_action('policy/target')
+        self.action_ = self.build_action('policy/main')
+        self.target_action_ = self.build_action('policy/target')
 
-        self.train,self.norm = self.build_train('policy/main')
-        self.update = self.build_update('policy/main','policy/target')
+        self.train_,self.norm = self.build_train('policy/main')
+        self.update_ = self.build_update('policy/main','policy/target')
 
     def build_action(self,scope,reuse=False):
         with tf.variable_scope(scope,reuse=reuse):
@@ -41,7 +41,7 @@ class Actor:
 
     def build_train(self,scope):
         var_list = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES,scope=scope)
-        G = tf.gradients(-self.action,var_list,self.critic_gradient)
+        G = tf.gradients(-self.action_,var_list,self.critic_gradient)
         G = [(g,v) for g,v in zip(G,var_list)]
 
         opt = tf.train.AdamOptimizer(self.lr)
@@ -61,3 +61,16 @@ class Actor:
             u = tf.assign(t,v)
             updates.append(u)
         return updates
+
+    def action(self,sess,s,phase=0):
+        return sess.run(self.action_, {self.s:s,self.phase:phase})
+
+    def action_target(self,sess,s,phase=0):
+        return sess.run(self.target_action_, {self.s:s,self.phase:phase})
+
+    def train(self,sess,s,critic_gradient,lr,phase=1):
+        sess.run(self.train_,{self.s:s,self.critic_gradient:critic_gradient,
+            self.lr:lr,self.phase:phase})
+
+    def update(self,sess,tau):
+        sess.run(self.update_,{self.tau:tau})
