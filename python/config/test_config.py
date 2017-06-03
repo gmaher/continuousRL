@@ -1,10 +1,10 @@
 class Config():
     gamma = 0.99
     clip_val = 10
-    tau = 0.001
+    tau = 0.01
     grad_clip = True
     learn_frequency = 1
-    num_episodes = 350
+    num_episodes = 2000
     lr = 1e-3
     lr_mu = 1e-4
     render_frequency = 1
@@ -17,3 +17,4 @@ class Config():
     plot_frequency = 5
     start_train = 1
     train_iterations = 1
+    num_heads = 10

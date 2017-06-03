@@ -76,3 +76,6 @@ class Critic:
 
     def gradient(self,sess,s,a):
         return sess.run(self.critic_gradient_,{self.s:s,self.a:a})
+
+    def set_key(self,key):
+        pass

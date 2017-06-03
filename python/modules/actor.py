@@ -74,3 +74,9 @@ class Actor:
 
     def update(self,sess,tau):
         sess.run(self.update_,{self.tau:tau})
+
+    def sample(self):
+        pass
+
+    def get_key(self):
+        return 0

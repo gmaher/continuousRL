@@ -24,6 +24,11 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.99, d='.
             noise_scale = config.noise_min
         R = 0
         it = 0
+
+        actor.sample()
+        key_ = actor.get_key()
+        critic.set_key(key_)
+
         for j in range(config.max_steps):
             if ep%config.render_frequency == 0 and ep > config.start_train:
                env.render()
@@ -46,14 +51,14 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.99, d='.
 
             st,r,done,_ = env.step(a)
             a = np.array(a)
-            replay_buffer.append((s,a,r,st,done),key=0)
+            replay_buffer.append((s,a,r,st,done),key=key_)
 
             s=st.copy()
 
             if ep >= config.start_train:
 
                 for k in range(config.train_iterations):
-                    tup = replay_buffer.sample(key=0)
+                    tup = replay_buffer.sample(key=key_)
 
                     a_target = actor.action_target(sess,s=tup[3],phase=0)
 
@@ -91,8 +96,8 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.99, d='.
             rewards_mean.append(np.mean(rewards[-100:]))
 
         if ep >= config.start_train:
-            print 'episode {}: r {}, R {}, Rbar {}, final state {}, action{},  Q {}, Qt {}, eps {}'\
-                .format(ep,r, R, rewards_mean[-1], s, a, q,qt,noise_scale)
+            print 'episode {}: head {}, r {}, R {}, Rbar {}, final state {}, action{},  Q {}, Qt {}, eps {}'\
+                .format(ep, key_,r, R, rewards_mean[-1], s, a, q,qt,noise_scale)
 
         if ep%config.plot_frequency == 0:
             plt.figure()
