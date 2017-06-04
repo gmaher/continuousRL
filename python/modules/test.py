@@ -4,6 +4,7 @@ import os
 from actor import Actor
 from critic import Critic
 import bootstrapped
+import bayes
 import sys
 sys.path.append('../')
 from config.test_config import Config
@@ -39,8 +40,11 @@ replay = ReplayBuffer()
 # A = Actor(state_shape, action_shape,value_shape,config)
 # C = Critic(state_shape, action_shape,value_shape,config)
 
-A = bootstrapped.Actor(state_shape, action_shape,value_shape,config)
-C = bootstrapped.Critic(state_shape, action_shape,value_shape,config)
+# A = bootstrapped.Actor(state_shape, action_shape,value_shape,config)
+# C = bootstrapped.Critic(state_shape, action_shape,value_shape,config)
+
+A = bayes.Actor(state_shape, action_shape,value_shape,config)
+C = bayes.Critic(state_shape, action_shape,value_shape,config)
 
 def mkdir(fn):
     if not os.path.exists(os.path.abspath(fn)):
@@ -56,4 +60,12 @@ saver = tf.train.Saver()
 if restore:
     saver.restore(sess,d+'model.ckpt')
     print "Restored tf model"
-train_loop(sess, A, C, env, replay, config,d=d,decay=0.925)
+train_loop(sess, A, C, env, replay, config,d=d,decay=0.0)
+
+s = env.reset()
+s = s.reshape((1,-1))
+A.sample()
+a = A.action(sess,s)
+C.set_key(0)
+q = C.q(sess,s,a)
+print s,a,q
