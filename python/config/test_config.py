@@ -4,10 +4,10 @@ class Config():
     tau = 0.001
     grad_clip = True
     learn_frequency = 1
-    num_episodes = 2000
+    num_episodes = 20
     lr = 1e-3
     lr_mu = 1e-4
-    render_frequency = 1
+    render_frequency = 1000000
     max_action = 2.0
     l2reg = 0.0
     mu_reg = 0.000001

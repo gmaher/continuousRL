@@ -108,5 +108,5 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.99, d='.
             plt.close()
 
     saver = tf.train.Saver()
-    saver.save(sess,d+'model.ckpt')
-    return rewards_mean
+    saver.save(sess,d+'model_{}.ckpt'.format(np.random.randint(1e6)))
+    return rewards_mean,rewards
