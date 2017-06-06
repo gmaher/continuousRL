@@ -13,8 +13,8 @@ from train import train_loop
 from replay_buffer import ReplayBuffer
 import gym
 import argparse
-np.random.seed(1)
-tf.set_random_seed(1)
+# np.random.seed(1)
+# tf.set_random_seed(1)
 #Get MNIST data from tensorflow
 parser = argparse.ArgumentParser()
 parser.add_argument('--restore',default=False)
@@ -30,10 +30,13 @@ config = Config()
 
 if env_type == 'pendulum':
     E = 'Pendulum-v0'
+    e=0.05
 if env_type == 'car':
     E = 'MountainCarContinuous-v0'
+    e=0.1
 if env_type == 'bipedal':
     E = 'BipedalWalker-v2'
+    e=0.05
 
 env = gym.make(E)
 
@@ -53,8 +56,8 @@ if model=='bootstrapped':
     C = bootstrapped.Critic(state_shape, action_shape,value_shape,config)
 if model == 'bayes':
     decay = 0
-    A = bayes.Actor(state_shape, action_shape,value_shape,config)
-    C = bayes.Critic(state_shape, action_shape,value_shape,config)
+    A = bayes.Actor(state_shape, action_shape,value_shape,config,e)
+    C = bayes.Critic(state_shape, action_shape,value_shape,config,e)
 
 def mkdir(fn):
     if not os.path.exists(os.path.abspath(fn)):
@@ -80,3 +83,8 @@ np.save(d+'rewards_{}.npy'.format(np.random.randint(1e6)),rewards)
 # C.set_key(0)
 # q = C.q(sess,s,a)
 # print s,a,q
+
+plt.figure()
+plt.plot(rmean)
+plt.ylabel('reward')
+plt.savefig(d+'reward_{}.png'.format(np.random.randint(1e6)),dpi=300)

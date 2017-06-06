@@ -9,8 +9,10 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.99, d='.
     noise_scale = 1.0
     rewards_mean = []
     noise = OUNoise(env.action_space.shape[0])
-
-    #initialize target networks
+    # MAX = env.observation_space.high
+    # MIN = env.observation_space.low
+    # print "MAX {} MIN {}".format(MAX,MIN)
+    # #initialize target networks
 
     actor.update(sess,1.0)
     critic.update(sess,1.0)
@@ -50,6 +52,7 @@ def train_loop(sess, actor, critic, env, replay_buffer, config, decay=0.99, d='.
                     a[i] = -config.max_action[i]
 
             st,r,done,_ = env.step(a)
+            st = st
             a = np.array(a)
             replay_buffer.append((s,a,r,st,done),key=key_)
 
