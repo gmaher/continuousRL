@@ -45,7 +45,7 @@ class Actor:
 
             for k in range(self.config.num_heads):
                 o = FC(out,shape=[300,self.action_shape],activation='tanh',
-                    scope='fc3'+str(k),init=3e-3)
+                    scope='fc3'+str(k),init=1e-2)
 
                 a_list.append(o*self.config.max_action)
 
@@ -151,7 +151,7 @@ class Critic:
             inp = tf.nn.relu(a_out+out)
 
             for k in range(self.config.num_heads):
-                o = FC(inp,shape=[300,self.value_shape],activation=None,scope='fc3'+str(k),init=3e-3)
+                o = FC(inp,shape=[300,self.value_shape],activation=None,scope='fc3'+str(k),init=1e-2)
                 q_list.append(o)
             return q_list
 
@@ -160,9 +160,9 @@ class Critic:
         train_list = []
         for k in range(self.config.num_heads):
             loss = tf.reduce_mean(tf.square(self.y-self.qs[k]))
-            for w in var_list:
-                if 'W' in w.name:
-                    loss += 1.0/2*self.config.l2reg*tf.reduce_mean(tf.square(w))
+            # for w in var_list:
+            #     if 'W' in w.name:
+            #         loss += 1.0/2*self.config.l2reg*tf.reduce_mean(tf.square(w))
 
             self.loss = loss
             opt = tf.train.AdamOptimizer(self.lr)

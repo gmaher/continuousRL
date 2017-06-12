@@ -4,12 +4,12 @@ class Config():
     tau = 0.001
     grad_clip = True
     learn_frequency = 1
-    num_episodes = 150
+    num_episodes = 1000
     lr = 1e-3
     lr_mu = 1e-4
     render_frequency = 1
     max_action = 2.0
-    l2reg = 0.01
+    l2reg = 1e-6
     mu_reg = 0.000001
     update_frequency = 1
     noise_min = 0.0
@@ -17,5 +17,5 @@ class Config():
     plot_frequency = 5
     start_train = 1
     train_iterations = 1
-    num_heads = 10
-    kl_reg = 1.0
+    num_heads = 30
+    kl_reg = 1e-2

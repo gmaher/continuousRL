@@ -13,6 +13,7 @@ from train import train_loop
 from replay_buffer import ReplayBuffer
 import gym
 import argparse
+import matplotlib.pyplot as plt
 # np.random.seed(1)
 # tf.set_random_seed(1)
 #Get MNIST data from tensorflow
@@ -20,23 +21,24 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--restore',default=False)
 parser.add_argument('env')
 parser.add_argument('model')
+parser.add_argument('file')
 args = parser.parse_args()
 
 restore = args.restore
 model = args.model
 env_type = args.env
-
+f = args.file
 config = Config()
 
 if env_type == 'pendulum':
     E = 'Pendulum-v0'
-    e=0.05
+    e=1.0
 if env_type == 'car':
     E = 'MountainCarContinuous-v0'
-    e=0.1
+    e=1.0
 if env_type == 'bipedal':
     E = 'BipedalWalker-v2'
-    e=0.05
+    e=1.0
 
 env = gym.make(E)
 
@@ -55,7 +57,7 @@ if model=='bootstrapped':
     A = bootstrapped.Actor(state_shape, action_shape,value_shape,config)
     C = bootstrapped.Critic(state_shape, action_shape,value_shape,config)
 if model == 'bayes':
-    decay = 0
+    decay = 0.0
     A = bayes.Actor(state_shape, action_shape,value_shape,config,e)
     C = bayes.Critic(state_shape, action_shape,value_shape,config,e)
 
@@ -71,7 +73,7 @@ sess.run(tf.initialize_all_variables())
 
 saver = tf.train.Saver()
 if restore:
-    saver.restore(sess,d+'model.ckpt')
+    saver.restore(sess,f)
     print "Restored tf model"
 rmean,rewards = train_loop(sess, A, C, env, replay, config,d=d,decay=decay)
 

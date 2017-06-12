@@ -42,11 +42,11 @@ def FC_bayes(x,shape,activation,scope,init=1e-3, bias=True):
         if init=='xavier':
             init = np.sqrt(2.0/(shape[0]+shape[1]))
         W_mu = tf.Variable(tf.zeros(shape), name='W_mu')
-        W_sig = tf.Variable(tf.ones(shape), name='W_sig')
+        W_sig = tf.Variable(tf.ones(shape)*-2.0, name='W_sig')
         W_sig = tf.log(1.0+tf.exp(W_sig))
         W_noise = tf.placeholder(shape=shape,dtype=tf.float32,name='W_eps')
         b_mu = tf.Variable(tf.zeros([shape[1]]), name = 'b_mu')
-        b_sig = tf.Variable(tf.ones([shape[1]]), name = 'b_sig')
+        b_sig = tf.Variable(tf.ones([shape[1]])*-2.0, name = 'b_sig')
         b_sig = tf.log(1.0+tf.exp(b_sig))
         b_noise = tf.placeholder(shape=shape[1],dtype=tf.float32,name='b_eps')
 
