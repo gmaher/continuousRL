@@ -17,5 +17,6 @@ class Config():
     plot_frequency = 5
     start_train = 1
     train_iterations = 1
-    num_heads = 30
-    kl_reg = 1e-2
+
+    model_name = 'model'
+    plots_dir = 'plots'
