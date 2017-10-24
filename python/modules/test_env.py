@@ -7,7 +7,7 @@ sig     = 0.03
 N       = 100
 p_crash = 0.1
 budget  = 1
-crash_steps = 20
+crash_steps = 10
 lookback = 20
 
 g = env.Crashing(r, sig, p_crash,
